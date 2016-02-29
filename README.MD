@@ -50,7 +50,7 @@ InstagramAssetsPicker.getMedia(
 The reason this option exists is to provide a better user experience.  It takes time to crop an asset with GPUImage so in most cases for a better UX you'll want to call `cropAsset` later with the result from the `getMedia` function.  This also allows showing your own UI loading indicator while the cropping is being performed.
 
 #### A note about cropping using getMedia or cropAsset
-The iOS simulator will not finish a crop using `getMedia` (with `cropAfterSelect` set to `false`) or `cropAsset`.  It works fine on a device.  I will be looking into why it doesn't work on the simulator.
+The iOS simulator will not finish a crop using `getMedia` (with `cropAfterSelect` set to `true`) or `cropAsset`.  It works fine on a device.  I will be looking into why it doesn't work on the simulator.
 
 ### Crop a media asset from the device library
 ```javascript
