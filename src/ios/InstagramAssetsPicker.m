@@ -109,27 +109,29 @@
 
     ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
 
-    [library assetForURL:fileURL resultBlock:^(ALAsset *asset) {
-        if (asset) {
-            id croppedAsset = [IGCropView cropAlAsset:asset withRegion: rect];
+    [self.commandDelegate runInBackground:^{
+        [library assetForURL:fileURL resultBlock:^(ALAsset *asset) {
+            if (asset) {
+                id croppedAsset = [IGCropView cropAlAsset:asset withRegion: rect];
 
-            if ([croppedAsset isKindOfClass:[UIImage class]]) {
-                NSLog(@"cropped a photo");
-                UIImage *photo = (UIImage *)croppedAsset;
-                outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
-                [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
-            } else if ([croppedAsset isKindOfClass:[NSURL class]]) {
-                NSLog(@"cropped a video");
-                outputPath = [(NSURL *)croppedAsset absoluteString];
+                if ([croppedAsset isKindOfClass:[UIImage class]]) {
+                    NSLog(@"cropped a photo");
+                    UIImage *photo = (UIImage *)croppedAsset;
+                    outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
+                    [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
+                } else if ([croppedAsset isKindOfClass:[NSURL class]]) {
+                    NSLog(@"cropped a video");
+                    outputPath = [(NSURL *)croppedAsset absoluteString];
+                }
+
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
+            } else {
+                // TODO: should I handle this if the input file is not an ALAsset?
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"input file is not an ALAsset"] callbackId:command.callbackId];
             }
-
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
-        } else {
-            // TODO: should I handle this if the input file is not an ALAsset?
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"input file is not an ALAsset"] callbackId:command.callbackId];
-        }
-    } failureBlock:^(NSError *error) {
-        NSLog(@"failed to use ALAssetsLibrary");
+        } failureBlock:^(NSError *error) {
+            NSLog(@"failed to use ALAssetsLibrary");
+        }];
     }];
 }
 
