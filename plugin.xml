@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-instagram-assets-picker" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Instagram Assets Picker</name>
+    <description>An assets picker like Instagram with photo and video crop.</description>
+    <keywords>video, photo, image, edit, crop photo, crop image, crop video, assetpicker, asset picker</keywords>
+    <repo>https://github.com/rossmartin/cordova-plugin-instagram-assets-picker.git</repo>
+    <license>MIT</license>
+
+
+    <js-module name="InstagramAssetsPicker" src="www/InstagramAssetsPicker.js">
+        <clobbers target="InstagramAssetsPicker" />
+    </js-module>
+
+    <engines>
+        <engine name="cordova" version=">=3.5.0" />
+    </engines>
+
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="InstagramAssetsPicker">
+                <param name="ios-package" value="InstagramAssetsPicker"/>
+            </feature>
+        </config-file>
+
+        <!-- the cordova plugin files -->
+        <header-file src="src/ios/InstagramAssetsPicker.h" />
+        <source-file src="src/ios/InstagramAssetsPicker.m" />
+
+        <hook type="after_plugin_install" src="hooks/AfterPluginInstall.js" />
+        <hook type="before_plugin_uninstall" src="hooks/BeforePluginUninstall.js" />
+
+        <!-- files for the InstagramAssetsPicker (https://github.com/Jexbat/InstagramAssetsPicker) -->
+        <resource-file src="src/ios/Assets/InstagramAssetsPicker.bundle" />
+
+        <header-file src="src/ios/IGAssetsPicker/IGAssetsCollectionViewCell.h" />
+        <source-file src="src/ios/IGAssetsPicker/IGAssetsCollectionViewCell.m" />
+        <header-file src="src/ios/IGAssetsPicker/IGAssetsPicker.h" />
+        <header-file src="src/ios/IGAssetsPicker/IGAssetsPickerViewController.h" />
+        <source-file src="src/ios/IGAssetsPicker/IGAssetsPickerViewController.m" />
+        <header-file src="src/ios/IGAssetsPicker/IGCropView.h" />
+        <source-file src="src/ios/IGAssetsPicker/IGCropView.m" />
+
+        <!-- required frameworks for the picker and GPUImage -->
+        <framework src="Foundation.framework" />
+        <framework src="CoreGraphics.framework" />
+        <framework src="UIKit.framework" />
+        <!-- frameworks needed for GPUImage -->
+        <framework src="AVFoundation.framework" />
+        <framework src="CoreMedia.framework" />
+        <framework src="OpenGLES.framework" />
+        <framework src="QuartzCore.framework" />
+        <framework src="AssetsLibrary.framework" />
+
+        <!-- files needed for GPUImage -->
+        <source-file src="src/ios/GPUImage/libGPUImage.a" framework="true" />
+        <framework src="src/ios/GPUImage/GPUImageHeaders" custom="true" />
+    </platform>
+
+</plugin>

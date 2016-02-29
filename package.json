@@ -1,0 +1,49 @@
+{
+  "name": "cordova-plugin-instagram-assets-picker",
+  "version": "1.0.0",
+  "description": "Cordova Instagram Assets Picker Plugin",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "cordova": {
+    "id": "cordova-plugin-instagram-assets-picker",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "ecosystem:cordova",
+    "cordova-ios",
+    "video",
+    "video",
+    "photo",
+    "image",
+    "edit",
+    "crop",
+    "photo",
+    "image",
+    "crop video",
+    "crop photo",
+    "assetpicker",
+    "asset picker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rossmartin/cordova-plugin-instagram-assets-picker.git"
+  },
+  "contributors": [
+    {
+      "name": "Ross Martin",
+      "web": "https://github.com/rossmartin",
+      "email": "rmartin311@gmail.com"
+    }
+  ],
+  "keywords": [],
+  "author": "Ross Martin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rossmartin/cordova-plugin-instagram-assets-picker/issues"
+  },
+  "homepage": "https://github.com/rossmartin/cordova-plugin-instagram-assets-picker#readme"
+}
