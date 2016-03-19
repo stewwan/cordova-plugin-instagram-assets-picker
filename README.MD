@@ -12,6 +12,11 @@ cordova plugin add cordova-plugin-instagram-assets-picker
 ```
 `InstagramAssetsPicker` will be available globally after deviceready.
 
+#### You may have to update your Xcode project Header Search Paths manually
+If you see `Could not locate build.xcconfig, you will need to set HEADER_SEARCH_PATHS manually.` in the CLI output when adding the plugin you will need to add an entry to your Xcode project Header Search Paths.  I have this step automated but for some reason it isn't working for everyone.  To do this navigate to your project Build Settings and add `"$(SRCROOT)/$(PRODUCT_NAME)/cordova-plugin-instagram-assets-picker/GPUImageHeaders"` to your Header Search Paths.  See the screenshot below for reference -
+
+![PNG](set-header-search-paths.png)
+
 ## Usage
 
 ### Show the picker with videos, photos, or all media
