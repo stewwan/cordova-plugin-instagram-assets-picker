@@ -8,7 +8,16 @@ let path = require('path');
 console.log('Instagram Assets Picker AfterPluginInstall.js, attempting to modify build.xcconfig');
 
 let xcConfigBuildFilePath = path.join(cwd, 'platforms', 'ios', 'cordova', 'build.xcconfig');
+
+try {
+  let xcConfigBuildFileExists = fs.accessSync(xcConfigBuildFilePath);
+} catch(e) {
+  console.log('Could not locate build.xcconfig, you will need to set HEADER_SEARCH_PATHS manually.');
+  return;
+}
+
 console.log('xcConfigBuildFilePath: ', xcConfigBuildFilePath);
+
 let lines = fs.readFileSync(xcConfigBuildFilePath, 'utf8').split('\n');
 
 let headerSearchPathLineNumber;
