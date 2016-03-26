@@ -35,6 +35,8 @@
  *
  * filePath           - (NSString) path to the chosen media file
  * rect               - (CGRect) rect object with data needed for cropping at a later time
+ * phAssetId          - (NSString) local identifier for the media asset
+ * type               - (NSString) type of the media asset (photo or video)
  *
  * @param CDVInvokedUrlCommand command
  * @return void
@@ -81,13 +83,14 @@
  *
  * ARGUMENTS
  * =========
- * filePath           - (NSString) path to the ALAsset
+ * phAssetId          - (NSString) local identifier for the media asset
  * rect               - (CGRect) rect object with data needed for cropping
  *
  * RESPONSE
  * ========
  *
  * filePath           - (NSString) path to the chosen media file
+ * type               - (NSString) type of the media asset (photo or video)
  *
  * @param CDVInvokedUrlCommand command
  * @return void
@@ -111,6 +114,8 @@
     __block NSString *outputPath;
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+
     [self.commandDelegate runInBackground:^{
         PHFetchResult *fetchResult = [PHAsset fetchAssetsWithLocalIdentifiers:[NSArray arrayWithObjects:phAssetId, nil] options:nil];
         PHAsset *phAsset = [fetchResult objectAtIndex:0];
@@ -123,15 +128,19 @@
         [IGCropView cropPhAsset:phAsset withRegion:rect onComplete:^(id croppedAsset) {
             if ([croppedAsset isKindOfClass:[UIImage class]]) {
                 NSLog(@"cropped a photo");
+                dict[@"type"] = @"photo";
                 UIImage *photo = (UIImage *)croppedAsset;
                 outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
                 [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
             } else if ([croppedAsset isKindOfClass:[NSURL class]]) {
                 NSLog(@"cropped a video");
+                dict[@"type"] = @"video";
                 outputPath = [(NSURL *)croppedAsset absoluteString];
             }
 
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
+            dict[@"filePath"] = outputPath;
+
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:command.callbackId];
         }];
     }];
 }
