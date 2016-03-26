@@ -144,18 +144,21 @@
     NSString *outputPath;
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 
-    if ([asset isKindOfClass:[UIImage class]]) { // photo
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+
+    if ([asset isKindOfClass:[UIImage class]]) {
         NSLog(@"chose a photo");
+        dict[@"type"] = @"photo";
         UIImage *photo = (UIImage *)asset;
         outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
         [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
-    } else if ([asset isKindOfClass:[NSURL class]]) { // video
+    } else if ([asset isKindOfClass:[NSURL class]]) {
         NSLog(@"chose a video");
+        dict[@"type"] = @"video";
         outputPath = [(NSURL*)asset absoluteString];
     }
 
-    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
-    [dict setObject:outputPath forKey:@"filePath"];
+    dict[@"filePath"] = outputPath;
 
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
 }
@@ -169,7 +172,7 @@
        @"phAssetId" : asset.localIdentifier
     }];
 
-    if(asset.mediaType == PHAssetMediaTypeImage) // photo
+    if (asset.mediaType == PHAssetMediaTypeImage)
     {
         PHImageManager *manager = [PHImageManager defaultManager];
 
@@ -190,23 +193,20 @@
                     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 
                     outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
+                    dict[@"type"] = @"photo";
                     dict[@"filePath"] = outputPath;
                     [UIImageJPEGRepresentation(image, 1.0) writeToFile:outputPath atomically:YES];
 
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
         }];
-
-
-
-    }
-    else if(asset.mediaType == PHAssetMediaTypeVideo) // video
-    {
+    } else if (asset.mediaType == PHAssetMediaTypeVideo) {
         PHImageManager *manager = [PHImageManager defaultManager];
         PHVideoRequestOptions *requestOptions = [[PHVideoRequestOptions alloc] init];
         requestOptions.networkAccessAllowed = true;
 
         [manager requestAVAssetForVideo:asset options:requestOptions resultHandler:^(AVAsset *avAsset, AVAudioMix *audioMix, NSDictionary *info) {
             AVURLAsset *urlAsset = (AVURLAsset *)avAsset;
+            dict[@"type"] = @"video";
             dict[@"filePath"] = urlAsset.URL.absoluteString;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
         }];
