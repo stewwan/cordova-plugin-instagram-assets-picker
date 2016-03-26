@@ -54,6 +54,10 @@
     BOOL cropAfterSelect = ([options objectForKey:@"cropAfterSelect"]) ? [[options objectForKey:@"cropAfterSelect"] boolValue] : NO;
 
     PHFetchOptions *fetchOptions = [PHFetchOptions new];
+    fetchOptions.sortDescriptors = @[
+       [NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:YES]
+    ];
+
     if ([mediaType isEqualToString:@"photo"]) {
         fetchOptions.predicate = [NSPredicate predicateWithFormat:@"mediaType == %i", PHAssetMediaTypeImage];
     } else if ([mediaType isEqualToString:@"video"]) {
@@ -115,7 +119,7 @@
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No asset was found with the provided phAssetId"] callbackId:command.callbackId];
             return;
         }
-        
+
         [IGCropView cropPhAsset:phAsset withRegion:rect onComplete:^(id croppedAsset) {
             if ([croppedAsset isKindOfClass:[UIImage class]]) {
                 NSLog(@"cropped a photo");
@@ -126,7 +130,7 @@
                 NSLog(@"cropped a video");
                 outputPath = [(NSURL *)croppedAsset absoluteString];
             }
-            
+
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
         }];
     }];
@@ -168,30 +172,30 @@
     if(asset.mediaType == PHAssetMediaTypeImage) // photo
     {
         PHImageManager *manager = [PHImageManager defaultManager];
-        
+
         PHImageRequestOptions *requestOptions = [[PHImageRequestOptions alloc] init];
         requestOptions.synchronous = true;
         requestOptions.networkAccessAllowed = true;
         requestOptions.resizeMode = PHImageRequestOptionsResizeModeExact;
         requestOptions.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
-        
+
         [manager requestImageForAsset:asset
                  targetSize:PHImageManagerMaximumSize
                  contentMode:PHImageContentModeDefault
                  options:requestOptions
                  resultHandler:^void(UIImage *image, NSDictionary *info) {
-                            
+
                     NSString *outputName = [InstagramAssetsPicker getUUID];
                     NSString *outputPath;
                     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-                    
+
                     outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
                     dict[@"filePath"] = outputPath;
                     [UIImageJPEGRepresentation(image, 1.0) writeToFile:outputPath atomically:YES];
-                    
+
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
         }];
-        
+
 
 
     }
@@ -200,7 +204,7 @@
         PHImageManager *manager = [PHImageManager defaultManager];
         PHVideoRequestOptions *requestOptions = [[PHVideoRequestOptions alloc] init];
         requestOptions.networkAccessAllowed = true;
-        
+
         [manager requestAVAssetForVideo:asset options:requestOptions resultHandler:^(AVAsset *avAsset, AVAudioMix *audioMix, NSDictionary *info) {
             AVURLAsset *urlAsset = (AVURLAsset *)avAsset;
             dict[@"filePath"] = urlAsset.URL.absoluteString;
