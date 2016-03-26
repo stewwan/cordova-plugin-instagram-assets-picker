@@ -10,6 +10,7 @@
 #import "IGCropView.h"
 #import <AVFoundation/AVFoundation.h>
 #import <MediaPlayer/MediaPlayer.h>
+@import Photos;
 
 @interface InstagramAssetsPicker ()<IGAssetsPickerDelegate>
 
@@ -52,18 +53,18 @@
     NSString *mediaType = ([options objectForKey:@"type"]) ? [options objectForKey:@"type"] : @"all";
     BOOL cropAfterSelect = ([options objectForKey:@"cropAfterSelect"]) ? [[options objectForKey:@"cropAfterSelect"] boolValue] : NO;
 
-    ALAssetsFilter *filterType;
+    PHFetchOptions *fetchOptions = [PHFetchOptions new];
     if ([mediaType isEqualToString:@"photo"]) {
-        filterType = [ALAssetsFilter allPhotos];
+        fetchOptions.predicate = [NSPredicate predicateWithFormat:@"mediaType == %i", PHAssetMediaTypeImage];
     } else if ([mediaType isEqualToString:@"video"]) {
-        filterType = [ALAssetsFilter allVideos];
+        fetchOptions.predicate = [NSPredicate predicateWithFormat:@"mediaType == %i", PHAssetMediaTypeVideo];
     } else {
-        filterType = [ALAssetsFilter allAssets];
+        fetchOptions.predicate = [NSPredicate predicateWithFormat:@"mediaType == %i || mediaType == %i", PHAssetMediaTypeImage, PHAssetMediaTypeVideo];
     }
 
     IGAssetsPickerViewController *picker = [[IGAssetsPickerViewController alloc] init];
     picker.delegate = self;
-    picker.alAssetFilter = filterType;
+    picker.fetchOptions = fetchOptions;
     picker.cropAfterSelect = cropAfterSelect;
     [self.viewController presentViewController:picker animated:YES completion:NULL];
 
@@ -97,8 +98,7 @@
         options = [NSDictionary dictionary];
     }
 
-    NSString *filePath = [options objectForKey:@"filePath"];
-    NSURL *fileURL = [self getURLFromFilePath:filePath];
+    NSString *phAssetId = [options objectForKey:@"phAssetId"];
     NSDictionary *rectData = [options objectForKey:@"rect"];
     CGRect rect;
     CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)(rectData), &rect);
@@ -107,30 +107,27 @@
     __block NSString *outputPath;
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 
-    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-
     [self.commandDelegate runInBackground:^{
-        [library assetForURL:fileURL resultBlock:^(ALAsset *asset) {
-            if (asset) {
-                id croppedAsset = [IGCropView cropAlAsset:asset withRegion: rect];
-
-                if ([croppedAsset isKindOfClass:[UIImage class]]) {
-                    NSLog(@"cropped a photo");
-                    UIImage *photo = (UIImage *)croppedAsset;
-                    outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
-                    [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
-                } else if ([croppedAsset isKindOfClass:[NSURL class]]) {
-                    NSLog(@"cropped a video");
-                    outputPath = [(NSURL *)croppedAsset absoluteString];
-                }
-
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
-            } else {
-                // TODO: should I handle this if the input file is not an ALAsset?
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"input file is not an ALAsset"] callbackId:command.callbackId];
+        PHFetchResult *fetchResult = [PHAsset fetchAssetsWithLocalIdentifiers:[NSArray arrayWithObjects:phAssetId, nil] options:nil];
+        PHAsset *phAsset = [fetchResult objectAtIndex:0];
+        if (!phAsset) {
+            NSLog(@"no asset found with phAssetId");
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No asset was found with the provided phAssetId"] callbackId:command.callbackId];
+            return;
+        }
+        
+        [IGCropView cropPhAsset:phAsset withRegion:rect onComplete:^(id croppedAsset) {
+            if ([croppedAsset isKindOfClass:[UIImage class]]) {
+                NSLog(@"cropped a photo");
+                UIImage *photo = (UIImage *)croppedAsset;
+                outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
+                [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
+            } else if ([croppedAsset isKindOfClass:[NSURL class]]) {
+                NSLog(@"cropped a video");
+                outputPath = [(NSURL *)croppedAsset absoluteString];
             }
-        } failureBlock:^(NSError *error) {
-            NSLog(@"failed to use ALAssetsLibrary");
+            
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
         }];
     }];
 }
@@ -159,46 +156,57 @@
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
 }
 
-- (void)IGAssetsPickerGetCropRegion:(CGRect)rect withAlAsset:(id)asset
+- (void)IGAssetsPickerGetCropRegion:(CGRect)rect withPhAsset:(PHAsset *)asset
 {
     NSLog(@"IGAssetsPickerGetCropRegion");
 
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary: @{
-       @"rect" : CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect))
+       @"rect" : CFBridgingRelease(CGRectCreateDictionaryRepresentation(rect)),
+       @"phAssetId" : asset.localIdentifier
     }];
 
-    ALAssetRepresentation *rep = [asset defaultRepresentation];
-
-    if([[asset valueForProperty:ALAssetPropertyType] isEqualToString:ALAssetTypePhoto]) // photo
+    if(asset.mediaType == PHAssetMediaTypeImage) // photo
     {
-        CGImageRef resolutionRef = [rep fullResolutionImage];
-        UIImage *photo = [UIImage imageWithCGImage:resolutionRef scale:1.0f orientation:(UIImageOrientation)rep.orientation];
+        PHImageManager *manager = [PHImageManager defaultManager];
+        
+        PHImageRequestOptions *requestOptions = [[PHImageRequestOptions alloc] init];
+        requestOptions.synchronous = true;
+        requestOptions.networkAccessAllowed = true;
+        requestOptions.resizeMode = PHImageRequestOptionsResizeModeExact;
+        requestOptions.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+        
+        [manager requestImageForAsset:asset
+                 targetSize:PHImageManagerMaximumSize
+                 contentMode:PHImageContentModeDefault
+                 options:requestOptions
+                 resultHandler:^void(UIImage *image, NSDictionary *info) {
+                            
+                    NSString *outputName = [InstagramAssetsPicker getUUID];
+                    NSString *outputPath;
+                    NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+                    
+                    outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
+                    dict[@"filePath"] = outputPath;
+                    [UIImageJPEGRepresentation(image, 1.0) writeToFile:outputPath atomically:YES];
+                    
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
+        }];
+        
 
-        NSString *outputName = [InstagramAssetsPicker getUUID];
-        NSString *outputPath;
-        NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 
-        outputPath = [cacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"jpg"]];
-        dict[@"filePath"] = outputPath;
-        [UIImageJPEGRepresentation(photo, 1.0) writeToFile:outputPath atomically:YES];
     }
-    else if([[asset valueForProperty:ALAssetPropertyType] isEqualToString:ALAssetTypeVideo]) // video
+    else if(asset.mediaType == PHAssetMediaTypeVideo) // video
     {
-        dict[@"filePath"] = rep.url.absoluteString;
+        PHImageManager *manager = [PHImageManager defaultManager];
+        PHVideoRequestOptions *requestOptions = [[PHVideoRequestOptions alloc] init];
+        requestOptions.networkAccessAllowed = true;
+        
+        [manager requestAVAssetForVideo:asset options:requestOptions resultHandler:^(AVAsset *avAsset, AVAudioMix *audioMix, NSDictionary *info) {
+            AVURLAsset *urlAsset = (AVURLAsset *)avAsset;
+            dict[@"filePath"] = urlAsset.URL.absoluteString;
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
+        }];
     }
-
-    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:self.callbackId];
-}
-
-- (NSURL*)getURLFromFilePath:(NSString*)filePath
-{
-    if ([filePath containsString:@"assets-library://"]) {
-        return [NSURL URLWithString:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-    } else if ([filePath containsString:@"file://"]) {
-        return [NSURL URLWithString:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-    }
-
-    return [NSURL fileURLWithPath:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
 }
 
 + (NSString *)getUUID

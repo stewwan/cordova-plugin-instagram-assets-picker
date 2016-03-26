@@ -20,14 +20,14 @@
 @property (strong, nonatomic) IGCropView *cropView;
 
 @property (strong, nonatomic) NSMutableArray *assets;
-@property (strong, nonatomic) ALAssetsLibrary *assetsLibrary;
+@property (strong, nonatomic) PHPhotoLibrary *assetsLibrary;
 
 @property (strong, nonatomic) UICollectionView *collectionView;
 @end
 
 @implementation IGAssetsPickerViewController
 @synthesize cropAfterSelect;
-@synthesize alAssetFilter;
+@synthesize fetchOptions;
 
 - (void)loadView {
     [super loadView];
@@ -54,48 +54,30 @@
     return _assets;
 }
 
-- (ALAssetsLibrary *)assetsLibrary {
+- (PHPhotoLibrary *)assetsLibrary {
     if (_assetsLibrary == nil) {
-        _assetsLibrary = [[ALAssetsLibrary alloc] init];
+        _assetsLibrary = [[PHPhotoLibrary alloc] init];
     }
     return _assetsLibrary;
 }
 
 - (void)loadPhotos {
-
-    ALAssetsGroupEnumerationResultsBlock assetsEnumerationBlock = ^(ALAsset *result, NSUInteger index, BOOL *stop) {
-
-        if (result) {
-            [self.assets insertObject:result atIndex:0];
+    
+    PHFetchResult *allMedia = [PHAsset fetchAssetsWithOptions: self.fetchOptions];
+    long mediaCount = [allMedia count];
+    [allMedia enumerateObjectsUsingBlock:^(PHAsset *asset, NSUInteger idx, BOOL *stop) {
+        if (asset) {
+            [self.assets insertObject:asset atIndex:0];
         }
-
-    };
-
-    ALAssetsLibraryGroupsEnumerationResultsBlock listGroupBlock = ^(ALAssetsGroup *group, BOOL *stop) {
-
-        [group setAssetsFilter:alAssetFilter];
-        if ([group numberOfAssets] > 0)
-        {
-            if ([[group valueForProperty:ALAssetsGroupPropertyType] intValue] == ALAssetsGroupSavedPhotos) {
-                [group enumerateAssetsUsingBlock:assetsEnumerationBlock];
-            }
-        }
-
-        if (group == nil) {
+        if (mediaCount == idx + 1) {
             if (self.assets.count) {
-                ALAsset * asset = [self.assets objectAtIndex:0];
-                [self.cropView setAlAsset:asset];
+                
+                PHAsset *asset = [self.assets objectAtIndex:0];
+                [self.cropView setPhAsset:asset];
+                [self.collectionView reloadData];
             }
-            [self.collectionView reloadData];
         }
-
-
-    };
-
-    [self.assetsLibrary enumerateGroupsWithTypes:ALAssetsGroupAll usingBlock:listGroupBlock failureBlock:^(NSError *error) {
-        NSLog(@"Load Photos Error: %@", error);
     }];
-
 
 }
 
@@ -220,25 +202,27 @@
     [self dismissViewControllerAnimated:YES completion:NULL];
 }
 
+
 - (void)cropAction {
     if (cropAfterSelect)
     {
         if(self.delegate && [self.delegate respondsToSelector:@selector(IGAssetsPickerFinishCroppingToAsset:)])
         {
-            id asset = [self.cropView cropAsset];
-            [self.delegate IGAssetsPickerFinishCroppingToAsset:asset];
-
+            [self.cropView cropAsset:^(id asset) {
+                [self.delegate IGAssetsPickerFinishCroppingToAsset:asset];
+            }];
         }
     }
     else
     {
-        if(self.delegate && [self.delegate respondsToSelector:@selector(IGAssetsPickerGetCropRegion: withAlAsset:)])
+        if(self.delegate && [self.delegate respondsToSelector:@selector(IGAssetsPickerGetCropRegion: withPhAsset:)])
         {
-            CGRect rect = [self.cropView getCropRegion];
-            [self.delegate IGAssetsPickerGetCropRegion:rect withAlAsset:self.cropView.alAsset];
+            [self.cropView getCropRegion:^(CGRect rect) {
+                [self.delegate IGAssetsPickerGetCropRegion:rect withPhAsset:self.cropView.phAsset];
+            }];
         }
     }
-
+    
     [self backAction];
 }
 
@@ -352,18 +336,18 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-
-    ALAsset * asset = [self.assets objectAtIndex:indexPath.row];
-
-    [self.cropView setAlAsset:asset];
-
+    
+    PHAsset *asset = [self.assets objectAtIndex:indexPath.row];
+    
+    [self.cropView setPhAsset:asset];
+    
     UICollectionViewCell * cell = [collectionView cellForItemAtIndexPath:indexPath];
-
+    
     [self.collectionView setContentOffset:CGPointMake(0, cell.frame.origin.y - cell.frame.size.height / 2) animated:YES];
     if (self.topView.frame.origin.y != 0) {
         [self tapGestureAction:nil];
     }
-
+    
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath
