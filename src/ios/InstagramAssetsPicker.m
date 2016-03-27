@@ -68,12 +68,19 @@
         fetchOptions.predicate = [NSPredicate predicateWithFormat:@"mediaType == %i || mediaType == %i", PHAssetMediaTypeImage, PHAssetMediaTypeVideo];
     }
 
-    IGAssetsPickerViewController *picker = [[IGAssetsPickerViewController alloc] init];
-    picker.delegate = self;
-    picker.fetchOptions = fetchOptions;
-    picker.cropAfterSelect = cropAfterSelect;
-    [self.viewController presentViewController:picker animated:YES completion:NULL];
-
+    [self getPermissionForPhotos:^(BOOL hasAccess) {
+        if (!hasAccess) {
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Cannot access photos"] callbackId:command.callbackId];
+            return;
+        }
+        IGAssetsPickerViewController *picker = [[IGAssetsPickerViewController alloc] init];
+        picker.delegate = self;
+        picker.fetchOptions = fetchOptions;
+        picker.cropAfterSelect = cropAfterSelect;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.viewController presentViewController:picker animated:YES completion:NULL];
+        });
+    }];
 }
 
 /**
@@ -229,6 +236,36 @@
     CFRelease(newUniqueId);
 
     return uuidString;
+}
+
+- (void)getPermissionForPhotos:(void(^)(BOOL))completeBlock
+{
+    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+
+    switch (status)
+    {
+        case PHAuthorizationStatusAuthorized:
+            completeBlock(true);
+            break;
+        case PHAuthorizationStatusNotDetermined:
+        {
+            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus authorizationStatus)
+             {
+                 if (authorizationStatus == PHAuthorizationStatusAuthorized)
+                 {
+                     completeBlock(true);
+                 }
+                 else
+                 {
+                     completeBlock(false);
+                 }
+             }];
+            break;
+        }
+        default:
+            completeBlock(false);
+            break;
+    }
 }
 
 @end
