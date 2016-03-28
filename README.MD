@@ -30,19 +30,21 @@ If you see `Could not locate build.xcconfig, you will need to set HEADER_SEARCH_
 InstagramAssetsPicker.getMedia(
   function(result) { // success cb
     console.log('getMedia success, result: ', JSON.stringify(result, null, 2));
-    // result will be an object with at least a filePath property
+    // result will be an object with at least a phAssetId, filePath, and type property
     // you will only get the rect object when 'cropAfterSelect' is false
     // the rect object is required for the cropAsset function documented below
 
     /* example of result when the 'cropAfterSelect' option is set to false
     {
-      filePath: "assets-library://asset/asset.m4v?id=4356310F-305C-4F87-9DD0-5277639CDDF6&ext=m4v",
+      phAssetId: "A1785F1A-EF0F-458C-9AF9-C439981CE0FB/L0/001",
+      type: "video",
       rect: {
-        Width: 1,
-        Height: 0.5625,
-        Y: 0.249609375,
-        X: 0
-      }
+        Width: 0.5625000293366611,
+        Height: 0.9999999823048711,
+        Y: 0,
+        X: 0.2496093880181434
+      },
+      filePath: "file:///Users/rossmartin/Library/Developer/CoreSimulator/Devices/6465544C-C262-4EA8-BA7C-8BAB4AB98597/data/Media/DCIM/100APPLE/IMG_0006.m4v"
     }
     */
   },
@@ -66,14 +68,20 @@ The iOS simulator will not finish a crop using `getMedia` (with `cropAfterSelect
 ```javascript
 InstagramAssetsPicker.cropAsset(
   function(result) { // success cb
-    // result is the path to the media asset
+    // result is an object with a filePath and type property
     console.log('cropAsset success, result: ', result);
+    /* example of result
+    {
+      type: "video",
+      filePath: "file:///Users/rossmartin/Library/Developer/CoreSimulator/Devices/6465544C-C262-4EA8-BA7C-8BAB4AB98597/data/Media/DCIM/100APPLE/IMG_0006.m4v"
+    }
+    */
   },
   function(err) { // error cb
     console.log('cropAsset error, err: ', err);
   },
   { // options, both properties below are required
-    filePath: "assets-library://asset/asset.m4v?id=4356310F-305C-4F87-9DD0-5277639CDDF6&ext=m4v",
+    phAssetId: "A1785F1A-EF0F-458C-9AF9-C439981CE0FB/L0/001",
     rect: {
       Width: 1,
       Height: 0.5625,
