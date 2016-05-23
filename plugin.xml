@@ -44,6 +44,7 @@
         <framework src="Foundation.framework" />
         <framework src="CoreGraphics.framework" />
         <framework src="UIKit.framework" />
+        <framework src="Photos.framework" />
         <!-- frameworks needed for GPUImage -->
         <framework src="AVFoundation.framework" />
         <framework src="CoreMedia.framework" />
