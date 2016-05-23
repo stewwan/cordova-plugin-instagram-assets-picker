@@ -27,6 +27,11 @@ lines.forEach((l, i) => {
   }
 });
 
+if (!headerSearchPathLineNumber) {
+  console.log('build.xcconfig does not have HEADER_SEARCH_PATHS');
+  return;
+}
+
 if (lines[headerSearchPathLineNumber].indexOf('instagram-assets-picker') === -1) {
   console.log('build.xcconfig does not have header path for Instagram Assets Picker');
   return;

@@ -19,20 +19,24 @@ try {
 console.log('xcConfigBuildFilePath: ', xcConfigBuildFilePath);
 
 let lines = fs.readFileSync(xcConfigBuildFilePath, 'utf8').split('\n');
-
+let pathToAdd = ' "$(SRCROOT)/$(PRODUCT_NAME)/cordova-plugin-instagram-assets-picker/GPUImageHeaders"';
 let headerSearchPathLineNumber;
+
 lines.forEach((l, i) => {
   if (l.indexOf('HEADER_SEARCH_PATHS') > -1) {
     headerSearchPathLineNumber = i;
   }
 });
 
-if (lines[headerSearchPathLineNumber].indexOf('instagram-assets-picker') > -1) {
-  console.log('build.xcconfig already setup for Instagram Assets Picker');
-  return;
+if (headerSearchPathLineNumber) {
+  if (lines[headerSearchPathLineNumber].indexOf('instagram-assets-picker') > -1) {
+    console.log('build.xcconfig already setup for Instagram Assets Picker');
+    return;
+  }
+  lines[headerSearchPathLineNumber] += pathToAdd;
+} else {
+  lines[lines.length - 1] = 'HEADER_SEARCH_PATHS = ' + pathToAdd;
 }
-
-lines[headerSearchPathLineNumber] += ' "$(SRCROOT)/$(PRODUCT_NAME)/cordova-plugin-instagram-assets-picker/GPUImageHeaders"';
 
 let newConfig = lines.join('\n');
 
