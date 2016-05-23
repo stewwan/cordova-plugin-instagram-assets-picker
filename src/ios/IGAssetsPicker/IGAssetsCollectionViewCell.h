@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
-@import Photos;
+#import <Photos/Photos.h>
 @interface IGAssetsCollectionViewCell : UICollectionViewCell
 
 - (void)applyAsset:(PHAsset *)asset;

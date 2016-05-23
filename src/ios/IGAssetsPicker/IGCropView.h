@@ -10,8 +10,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import <AVFoundation/AVFoundation.h>
-
-@import Photos;
+#import <Photos/Photos.h>
 
 @interface IGCropView : UIScrollView
 @property (nonatomic, strong) ALAsset * alAsset;

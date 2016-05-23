@@ -10,7 +10,7 @@
 #import "IGCropView.h"
 #import <AVFoundation/AVFoundation.h>
 #import <MediaPlayer/MediaPlayer.h>
-@import Photos;
+#import <Photos/Photos.h>
 
 @interface InstagramAssetsPicker ()<IGAssetsPickerDelegate>
 

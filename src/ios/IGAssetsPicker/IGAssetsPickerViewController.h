@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <AVFoundation/AVFoundation.h>
-@import Photos;
+#import <Photos/Photos.h>
 
 @protocol IGAssetsPickerDelegate <NSObject>
 
