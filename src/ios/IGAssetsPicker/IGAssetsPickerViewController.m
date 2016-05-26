@@ -28,6 +28,7 @@
 @implementation IGAssetsPickerViewController
 @synthesize cropAfterSelect;
 @synthesize fetchOptions;
+@synthesize showGrid;
 
 - (void)loadView {
     [super loadView];
@@ -45,7 +46,10 @@
 
 }
 
-
+-(UIInterfaceOrientationMask)supportedInterfaceOrientations
+{
+    return UIInterfaceOrientationMaskPortrait;
+}
 
 - (NSMutableArray *)assets {
     if (_assets == nil) {
@@ -62,7 +66,7 @@
 }
 
 - (void)loadPhotos {
-    
+
     PHFetchResult *allMedia = [PHAsset fetchAssetsWithOptions: self.fetchOptions];
     long mediaCount = [allMedia count];
     [allMedia enumerateObjectsUsingBlock:^(PHAsset *asset, NSUInteger idx, BOOL *stop) {
@@ -71,7 +75,7 @@
         }
         if (mediaCount == idx + 1) {
             if (self.assets.count) {
-                
+
                 PHAsset *asset = [self.assets objectAtIndex:0];
                 [self.cropView setPhAsset:asset];
                 [self.collectionView reloadData];
@@ -149,12 +153,13 @@
         [self.topView addSubview:self.cropView];
         [self.topView sendSubviewToBack:self.cropView];
 
-        self.maskView = [[UIImageView alloc] initWithFrame:rect];
-        self.maskView.image = [UIImage imageNamed:@"InstagramAssetsPicker.bundle/straighten-grid"];
+        if (self.showGrid) {
+            self.maskView = [[UIImageView alloc] initWithFrame:rect];
+            self.maskView.image = [UIImage imageNamed:@"InstagramAssetsPicker.bundle/straighten-grid"];
 
-        UIPanGestureRecognizer *cropViewPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(cropViewPanGestureAction:)];
-        [self.cropView addGestureRecognizer:cropViewPanGesture];
-
+            UIPanGestureRecognizer *cropViewPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(cropViewPanGestureAction:)];
+            [self.cropView addGestureRecognizer:cropViewPanGesture];
+        }
     }
     return _topView;
 }
@@ -199,6 +204,7 @@
 }
 
 - (void)backAction {
+    [self.cropView stopPlayingIfNecessary];
     [self dismissViewControllerAnimated:YES completion:NULL];
 }
 
@@ -222,7 +228,7 @@
             }];
         }
     }
-    
+
     [self backAction];
 }
 
@@ -336,18 +342,18 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    
+
     PHAsset *asset = [self.assets objectAtIndex:indexPath.row];
-    
+
     [self.cropView setPhAsset:asset];
-    
+
     UICollectionViewCell * cell = [collectionView cellForItemAtIndexPath:indexPath];
-    
+
     [self.collectionView setContentOffset:CGPointMake(0, cell.frame.origin.y - cell.frame.size.height / 2) animated:YES];
     if (self.topView.frame.origin.y != 0) {
         [self tapGestureAction:nil];
     }
-    
+
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath

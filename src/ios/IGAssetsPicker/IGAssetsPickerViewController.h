@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <AVFoundation/AVFoundation.h>
-#import <Photos/Photos.h>
+@import Photos;
 
 @protocol IGAssetsPickerDelegate <NSObject>
 
@@ -25,4 +25,5 @@
 @property (nonatomic, strong) id<IGAssetsPickerDelegate> delegate;
 @property (readwrite, nonatomic) BOOL cropAfterSelect;
 @property (readwrite, nonatomic) PHFetchOptions *fetchOptions;
+@property (readwrite, nonatomic) BOOL showGrid;
 @end
