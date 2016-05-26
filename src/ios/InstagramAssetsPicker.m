@@ -10,7 +10,7 @@
 #import "IGCropView.h"
 #import <AVFoundation/AVFoundation.h>
 #import <MediaPlayer/MediaPlayer.h>
-#import <Photos/Photos.h>
+@import Photos;
 
 @interface InstagramAssetsPicker ()<IGAssetsPickerDelegate>
 
@@ -29,6 +29,7 @@
  * =========
  * type               - (NSString) type of media to choose (video, photo, or all)
  * cropAfterSelect    - (BOOL) determine whether to perfrom crop right away
+ * showGrid           - (BOOL) determine whether to show the grid for cropping
  *
  * RESPONSE
  * ========
@@ -54,6 +55,7 @@
 
     NSString *mediaType = ([options objectForKey:@"type"]) ? [options objectForKey:@"type"] : @"all";
     BOOL cropAfterSelect = ([options objectForKey:@"cropAfterSelect"]) ? [[options objectForKey:@"cropAfterSelect"] boolValue] : NO;
+    BOOL showGrid = ([options objectForKey:@"showGrid"]) ? [[options objectForKey:@"showGrid"] boolValue] : NO;
 
     PHFetchOptions *fetchOptions = [PHFetchOptions new];
     fetchOptions.sortDescriptors = @[
@@ -77,6 +79,7 @@
         picker.delegate = self;
         picker.fetchOptions = fetchOptions;
         picker.cropAfterSelect = cropAfterSelect;
+        picker.showGrid = showGrid;
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.viewController presentViewController:picker animated:YES completion:NULL];
         });
