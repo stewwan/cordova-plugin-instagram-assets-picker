@@ -53,7 +53,8 @@ InstagramAssetsPicker.getMedia(
   },
   { // options
     type: 'video', // accepts 'photo', 'video', or 'all' - defaults to all
-    cropAfterSelect: false // see the note above for when this is false - defaults to false
+    cropAfterSelect: false, // see the note above for when this is false - defaults to false
+    showGrid: false // determines whether to show the grid for cropping - defaults to false
   }
 );
 ```
