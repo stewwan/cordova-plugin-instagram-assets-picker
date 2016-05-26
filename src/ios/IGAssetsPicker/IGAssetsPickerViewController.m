@@ -183,22 +183,6 @@
         _collectionView.backgroundColor = [UIColor clearColor];
 
         [_collectionView registerClass:[IGAssetsCollectionViewCell class] forCellWithReuseIdentifier:@"IGAssetsCollectionViewCell"];
-
-        //        rect = CGRectMake(0, 0, 60, layout.sectionInset.top);
-        //        UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        //        backBtn.frame = rect;
-        //        [backBtn setImage:[UIImage imageNamed:@"back"] forState:UIControlStateNormal];
-        //        [backBtn addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
-        //        [_collectionView addSubview:backBtn];
-        //
-        //        rect = CGRectMake((CGRectGetWidth(_collectionView.bounds)-140)/2, 0, 140, layout.sectionInset.top);
-        //        UILabel *titleLabel = [[UILabel alloc] initWithFrame:rect];
-        //        titleLabel.text = @"CAMERA ROLL";
-        //        titleLabel.textAlignment = NSTextAlignmentCenter;
-        //        titleLabel.backgroundColor = [UIColor clearColor];
-        //        titleLabel.textColor = [UIColor whiteColor];
-        //        titleLabel.font = [UIFont boldSystemFontOfSize:18.0f];
-        //        [_collectionView addSubview:titleLabel];
     }
     return _collectionView;
 }
@@ -206,8 +190,11 @@
 - (void)backAction {
     [self.cropView stopPlayingIfNecessary];
     [self dismissViewControllerAnimated:YES completion:NULL];
+    if(self.delegate && [self.delegate respondsToSelector:@selector(IGAssetsPickerCancel)])
+    {
+        [self.delegate IGAssetsPickerCancel];
+    }
 }
-
 
 - (void)cropAction {
     if (cropAfterSelect)
@@ -229,7 +216,8 @@
         }
     }
 
-    [self backAction];
+    [self.cropView stopPlayingIfNecessary];
+    [self dismissViewControllerAnimated:YES completion:NULL];
 }
 
 - (void)panGestureAction:(UIPanGestureRecognizer *)panGesture {

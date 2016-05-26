@@ -19,6 +19,8 @@
 //crop immediatly
 -(void)IGAssetsPickerFinishCroppingToAsset:(id)asset;
 
+-(void)IGAssetsPickerCancel;
+
 @end
 
 @interface IGAssetsPickerViewController : UIViewController

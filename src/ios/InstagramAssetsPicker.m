@@ -232,6 +232,11 @@
     }
 }
 
+- (void)IGAssetsPickerCancel
+{
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No photo/video was selected."] callbackId:self.callbackId];
+}
+
 + (NSString *)getUUID
 {
     CFUUIDRef newUniqueId = CFUUIDCreate(kCFAllocatorDefault);
