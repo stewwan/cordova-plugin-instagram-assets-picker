@@ -19,8 +19,10 @@
     int _playState;//if is video(playing or pause) or image
     NSString * _type;
     PHAssetMediaType _mediaType;
-
     AVAssetExportSession *exporter;
+    GPUImageMovieWriter *_movieWriter;
+    GPUImageMovie *_movieFile;
+    GPUImageOutput<GPUImageInput> *_filter;
 }
 
 @property (strong, nonatomic) UIImageView *imageView;
@@ -223,7 +225,7 @@
         }
         else if(asset.mediaType == PHAssetMediaTypeVideo)//video
         {
-            [self cropVideo:asset withRegion:rect onComplete:^(NSURL *movieURL) {
+            [[[self alloc] init] cropVideo:asset withRegion:rect onComplete:^(NSURL *movieURL) {
                 completion(movieURL);
             }];
         }
@@ -253,7 +255,7 @@
 
 #pragma mark -Video Process
 
-+ (void)cropVideo:(PHAsset *)asset withRegion:(CGRect)rect onComplete:(void(^)(NSURL *))completion
+- (void)cropVideo:(PHAsset *)asset withRegion:(CGRect)rect onComplete:(void(^)(NSURL *))completion
 {
     PHImageManager *manager = [PHImageManager defaultManager];
     PHVideoRequestOptions *requestOptions = [[PHVideoRequestOptions alloc] init];
@@ -262,37 +264,34 @@
     [manager requestAVAssetForVideo:asset options:requestOptions resultHandler:^(AVAsset *avAsset, AVAudioMix *audioMix, NSDictionary *info) {
         UIInterfaceOrientation orientation = [IGCropView orientationForTrack:avAsset];
 
-        GPUImageMovie *movieFile;
-        GPUImageOutput<GPUImageInput> *filter;
-        GPUImageMovieWriter *movieWriter;
+        _movieFile = [[GPUImageMovie alloc] initWithAsset:avAsset];
+        _movieFile.runBenchmark = YES;
+        _movieFile.playAtActualSpeed = NO;
+        _movieFile.shouldRepeat = NO;
 
-        movieFile = [[GPUImageMovie alloc] initWithAsset:avAsset];
-        movieFile.runBenchmark = YES;
-        movieFile.playAtActualSpeed = NO;
-
-        filter = [[GPUImageCropFilter alloc] initWithCropRegion:rect];
+        _filter = [[GPUImageCropFilter alloc] initWithCropRegion:rect];
         //the camera sensor default orientation is LandscapeLeft
         switch (orientation)
         {
             case UIInterfaceOrientationLandscapeLeft:
-                [filter setInputRotation:kGPUImageNoRotation atIndex:0];
+                [_filter setInputRotation:kGPUImageNoRotation atIndex:0];
 
                 break;
             case UIInterfaceOrientationLandscapeRight:
-                [filter setInputRotation:kGPUImageRotate180 atIndex:0];
+                [_filter setInputRotation:kGPUImageRotate180 atIndex:0];
 
                 break;
             case UIInterfaceOrientationPortraitUpsideDown:
-                [filter setInputRotation:kGPUImageRotateLeft atIndex:0];
+                [_filter setInputRotation:kGPUImageRotateLeft atIndex:0];
 
                 break;
             default:
-                [filter setInputRotation:kGPUImageRotateRight atIndex:0];
+                [_filter setInputRotation:kGPUImageRotateRight atIndex:0];
 
         };
 
 
-        [movieFile addTarget:filter];
+        [_movieFile addTarget:_filter];
 
         NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
         NSString *outputName = [InstagramAssetsPicker getUUID];
@@ -300,30 +299,23 @@
         unlink([pathToMovie UTF8String]); // If a file already exists, AVAssetWriter won't let you record new frames, so delete the old movie
         NSURL *movieURL = [NSURL fileURLWithPath:pathToMovie];
 
-        movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:movieURL size:CGSizeMake(1080, 1080)];
+        _movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:movieURL size:CGSizeMake(1080, 1080)];
 
-        [filter addTarget:movieWriter];
+        [_filter addTarget:_movieWriter];
 
-        movieWriter.shouldPassthroughAudio = YES;
-        movieFile.audioEncodingTarget = movieWriter;
-        [movieFile enableSynchronizedEncodingUsingMovieWriter:movieWriter];
+        _movieWriter.shouldPassthroughAudio = YES;
+        _movieFile.audioEncodingTarget = _movieWriter;
+        [_movieFile enableSynchronizedEncodingUsingMovieWriter:_movieWriter];
 
-        [movieWriter startRecording];
-        [movieFile startProcessing];
+        [_movieWriter startRecording];
+        [_movieFile startProcessing];
 
-        //    __weak GPUImageMovieWriter * weakWriter = movieWriter;
-        //    __weak GPUImageOutput<GPUImageInput>  * weakFilter = filter;
-
-        //FIXME:
-        __block BOOL finished = NO;
-        [movieWriter setCompletionBlock:^{
+        [_movieWriter setCompletionBlock:^{
             NSLog(@"Completed Successfully");
-            [movieWriter finishRecording];
-            [filter removeTarget:movieWriter];
-            finished = YES;
+            [_filter removeTarget:_movieWriter];
+            [_movieWriter finishRecording];
+            completion(movieURL);
         }];
-        while (!finished);
-        completion(movieURL);
     }];
 }
 

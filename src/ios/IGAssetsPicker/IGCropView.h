@@ -10,10 +10,9 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import <AVFoundation/AVFoundation.h>
-
 #import <Photos/Photos.h>
 
-@interface IGCropView : UIScrollView
+@interface IGCropView : UIScrollView;
 @property (nonatomic, strong) ALAsset * alAsset;
 @property (nonatomic, strong) PHAsset * phAsset;
 
@@ -23,7 +22,9 @@
 
 - (void)stopPlayingIfNecessary;
 
-//for lately crop
-+(void)cropPhAsset:(PHAsset *)asset withRegion:(CGRect)rect onComplete:(void(^)(id))completion;
+- (void)cropVideo:(PHAsset *)asset withRegion:(CGRect)rect onComplete:(void(^)(NSURL *))completion;
+
+// for late crop
++ (void)cropPhAsset:(PHAsset *)asset withRegion:(CGRect)rect onComplete:(void(^)(id))completion;
 
 @end
