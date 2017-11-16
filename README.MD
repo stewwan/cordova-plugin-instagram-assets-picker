@@ -6,6 +6,8 @@ This is a cordova plugin for iOS that provides an image picker like Instagram, a
 
 The app in the GIF shows how to use the [cordova-plugin-video-editor](https://github.com/jbavari/cordova-plugin-video-editor) and is using this plugin.  [Here is a YouTube video showing more of it](https://youtu.be/U0O2gG4N0JM).  [Here is the source code for the app shown in the gif and video](https://github.com/rossmartin/video-editor-ionic2).
 
+#### I am no longer maintaining this project. PRs are welcome.
+
 ## Installation
 ```
 cordova plugin add cordova-plugin-instagram-assets-picker
