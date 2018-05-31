@@ -6,14 +6,24 @@
 var exec = require('cordova/exec');
 var pluginName = 'InstagramAssetsPicker';
 
-function InstagramAssetsPicker() {}
+(function (window) {
 
-InstagramAssetsPicker.prototype.getMedia = function(win, fail, opts) {
-  exec(win, fail, pluginName, 'getMedia', [opts]);
-};
+  function InstagramAssetsPicker() { }
 
-InstagramAssetsPicker.prototype.cropAsset = function(win, fail, opts) {
-  exec(win, fail, pluginName, 'cropAsset', [opts]);
-};
+  InstagramAssetsPicker.prototype.getMedia = function (win, fail, opts) {
+    exec(win, fail, pluginName, 'getMedia', [opts]);
+  };
 
-module.exports = new InstagramAssetsPicker();
+  InstagramAssetsPicker.prototype.cropAsset = function (win, fail, opts) {
+    exec(win, fail, pluginName, 'cropAsset', [opts]);
+  };
+
+
+  cordova.addConstructor(function () {
+
+    window.InstagramAssetsPicker = new InstagramAssetsPicker();
+
+  });
+
+  module.exports = new InstagramAssetsPicker();
+});
